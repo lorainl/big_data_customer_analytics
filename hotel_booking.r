@@ -1,5 +1,5 @@
 #install libraries
-library(ggplot2)
+library(tidyverse)
 library(ggpubr)
 library(dplyr)
 library(stargazer)
@@ -46,121 +46,92 @@ head(test)
 #avg_price_per_room, - may be useful
 #no_of_special_requests - may have too much noise
 
-
 ## ======================== Logistic Regression ========================
 # simple data exploration
 str(hotel_bookings)
 
-# plot booking status by room type
-ggplot(hotel_bookings, aes(x = as.factor(no_of_children),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by family", x = "Number of Children", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-#looks like the sample size of more children is small, we cannot make a conclusion here
+#check for missing values
+colSums(is.na(hotel_bookings))
 
-# plot booking status by year
-ggplot(hotel_bookings, aes(x = as.factor(arrival_year),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by year", x = "Year", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-# plot booking status by month
-ggplot(hotel_bookings, aes(x = as.factor(arrival_month),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by month", x = "Month", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-# there is seasonality in hotel booking and cancellation
-
-# plot booking status by room type
-ggplot(hotel_bookings, aes(x = as.factor(room_type_reserved),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by room type", x = "Room Type", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-# there's some room type that are more likely to be cancelled
-
-#plot booking status by weekend
-ggplot(hotel_bookings, aes(x = as.factor(no_of_weekend_nights),y=booking_status)) +
-    stat_summary(fun = "sum", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by weekend", x = "Weekend", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-
-ggplot(hotel_bookings, aes(x = as.factor(no_of_weekend_nights),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by weekend", x = "Weekend", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-#does not seem to have significant correlation
-
-#plot booking status by required car parking
-ggplot(hotel_bookings, aes(x = as.factor(required_car_parking_space),y=booking_status)) +
-    stat_summary(fun = "mean", geom = "bar")+ 
-    labs(title = "Percentage of confirmed bookings by required car parking", x = "Required Car Parking", y = "Percentage Confirmed")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-#those who required car parking are more likely to cancel, but number is small, we cannot say for sure
-
-#plot average price and booking status
-ggplot(hotel_bookings, aes(x = as.factor(booking_status),y=avg_price_per_room)) +
-    geom_boxplot()+ 
-    labs(title = "Average price by booking status", x = "Booking Status", y = "Average Price")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-#does not have significant difference
-
-#plot lead time and booking status
-ggplot(hotel_bookings, aes(x = as.factor(booking_status),y=lead_time)) +
-    geom_boxplot()+ 
-    labs(title = "Lead time by booking status", x = "Booking Status", y = "Lead Time")+
-    theme(plot.title = element_text(hjust = 0.5,size=32),
-            axis.title.x = element_text(size = 24),
-            axis.title.y = element_text(size = 24)
-            )
-#seems like the lead time is longer for confirmed booking
-cor.test(hotel_bookings$booking_status,hotel_bookings$repeated_guest)
-#correlation is not significant
+#find correlation of single variables with booking status
+#Uncertain variables
+cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_adults)
+# correlation is very weak, 0.007
+cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_children)
+# correlation is very weak, 0.004
+cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_weekend_nights)
+# cor 0.0443
+cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_week_nights)
+# cor 0.0585
+ggplot(hotel_bookings %>% 
+        count(type_of_meal_plan, booking_status) %>%
+        mutate(pct = prop.table(n) * 100),
+    aes(x=type_of_meal_plan, fill=as.factor(booking_status))) + 
+    geom_bar(position = "stack") +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = pct),
+    position=position_stack(vjust=0.5))+
+    xlab("Type of Meal Plan") +
+    ylab("Count")+
+    theme(axis.text = element_text(size = 17.5),
+    axis.title = element_text(size = 20,face="bold"))
+# there can be a correlation but rather weak
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$required_car_parking_space>0.5))
+# can predict 58.8%
+ggplot(hotel_bookings,aes(x=room_type_reserved,
+                fill=as.factor(booking_status))) + 
+    geom_bar(position = "stack") +
+    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
+    xlab("Type of Room Reserved") +
+    ylab("Count")+
+    theme(axis.text = element_text(size = 17.5),
+    axis.title = element_text(size = 20,face="bold"))
+# cannot tell correlation
+ggplot(hotel_bookings,aes(x=arrival_month,
+                fill=as.factor(booking_status))) + 
+    geom_bar(position = "stack") +
+    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
+    xlab("Type of Room Reserved") +
+    ylab("Count") +
+    theme(axis.text = element_text(size = 17.5),
+    axis.title = element_text(size = 20,face="bold")) 
+# could be a strong predictor
+ggplot(hotel_bookings,aes(x=market_segment_type,
+                fill=as.factor(booking_status))) + 
+    geom_bar(position = "stack") +
+    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
+    xlab("Type of Room Reserved") +
+    ylab("Count") +
+    theme(axis.text = element_text(size = 17.5),
+    axis.title = element_text(size = 20,face="bold")) 
+#could be a strong predictor
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$repeated_guest>0.5))
+# can predict 61.3%
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_previous_cancellations)
-#correlation is not significant
+# cor -0.0456
+# this factor is not important
+cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_previous_bookings_not_canceled)
+#cor -0.0801
+# this factor is not important
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_special_requests)
-#some correlation but weak
+# cor -0.22 (this is a strong indicator)
+# the more special requests, the more likely it will be cancelled
 cor.test(hotel_bookings$booking_status,hotel_bookings$avg_price_per_room)
-#some correlation but weak
+# cor 0.1575 (this is a moderate indicator)
+#the higher the price, the less likely it will be cancelled
 cor.test(hotel_bookings$booking_status,hotel_bookings$lead_time)
-#some moderate correlation
-#correlation matrix among all parameters
-rcorr(as.matrix(hotel_bookings[,c("no_of_adults","no_of_children","no_of_weekend_nights","no_of_week_nights",
-                                "type_of_meal_plan","required_car_parking_space","room_type_reserved","lead_time",
-                                "arrival_month","market_segment_type","repeated_guest","no_of_previous_cancellations",
-                                "avg_price_per_room","no_of_special_requests")]))
-#some strong correlation exist between:
-#no_of_children and market_segment_type
-#no_of_weekend_nights and no_of_week_nights
-#weekend_nights and repeated_guest
-#meal_plan and room_type_reserved,number_of_children
-#parking and segment_type,repeated guiests
-#room_type_reserved and no of children and avg price
-#repeated guest and market segment, previous cancellation (but this is expected?)
-#avg price is correlated with number of visitors, room type, repeated guest(neg),special requests
-# will drop average price, market segment, number of children for glm
+# cor 0.3749 (this is a strong indicator)
+#seems like the lead time is longer for confirmed booking
+
+## ======================== Choice of Variable========================
+#no_of_weekend_nights
+#no_of_week_nights
+#type_of_meal_plan
+#lead_time
+#arrival_month
+#market_segment_type
+#repeated_guest
+#avg_price_per_room
+#no_of_special_requests
 
 ##===================Logistic Regression===================
 glm_model.all<-glm(booking_status~.-id, data=hotel_bookings, family=binomial)
@@ -176,7 +147,21 @@ nagelkerke(glm_model.forward)
 #calculate mfx
 backward_mfx<-logitmfx(booking_status~. -no_of_previous_bookings_not_canceled, data = hotel_bookings)
 backward_mfx
-#the most important variables are: room type (neg), market segment, number of special requests(neg), number of cancellations
+#evaluate the accuracy of the backwawrd model
+hotel_bookings$glm_pred<-predict(glm_model.backward,hotel_bookings, type="response")
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_pred>0.5))
+#The backward model can predict 76.7% of response correctly
+
+glm_model_selection<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+market_segment_type+repeated_guest+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
+stargazer(glm_model_selection,type="text",no.space=TRUE)
+nagelkerke(glm_model_selection)
+# evaluate the accuracy of the selection model
+hotel_bookings$glm_sele_pred<-predict(glm_model_selection,hotel_bookings, type="response")
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_sele_pred>0.5))
+# The selection model can predict 76.0% of response correctly
+
+#some potential write up:
+#even though the backward model has a higher R^2 and higher accuracy, the selection model can be better explained in a business context.
 
 ## ======================== Decision Tree ========================
 #split data into train and test
@@ -221,7 +206,7 @@ prop.table(table(rf_model.predict>0.5,val$booking_status))
 #random forest is overfitting no matter the tree depth or number of trees
 #this may not be the best model for this data set
 
-##===================Neural Network===================
+##===================Neural Network(nnet)===================
 #set seed
 set.seed(123)
 n <- names(train[,-1])
