@@ -25,6 +25,28 @@ head(hotel_bookings)
 str(hotel_bookings)
 head(test)
 
+## ======================== Need to figure out which variables are worth using for the model ========================
+#Variables
+#id (not useful)
+#no_of_adults - this may have too much noise
+#no_of_children - this may infer type of stay and may impact the outcome
+#no_of_weekend_nights, - this may infer type of stay and may impact the outcome
+#no_of_week_nights, - this may infer type of stay and may impact the outcome
+#type_of_meal_plan, - may not be indicative.. but will take a look at the ggplot before deciding
+#required_car_parking_space, - may have too much noise
+#room_type_reserved, - may be useful, but will look at ggplot before deciding
+#lead_time, - very useful
+#arrival_year, - only have two years, this is not indicative
+#arrival_month, - may infer to seasonality and may impact the outcome
+#arrival_date, - not useful
+#market_segment_type, - not sure if this is useful
+#repeated_guest,
+#no_of_previous_cancellations, - useful
+#no_of_previous_bookings_not_canceled,
+#avg_price_per_room, - may be useful
+#no_of_special_requests - may have too much noise
+
+
 ## ======================== Logistic Regression ========================
 # simple data exploration
 str(hotel_bookings)
