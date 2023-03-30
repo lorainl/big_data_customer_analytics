@@ -56,7 +56,19 @@ colSums(is.na(hotel_bookings))
 #find correlation of single variables with booking status
 #Uncertain variables
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_adults)
-# correlation is very weak, 0.007
+ggplot(hotel_bookings %>% 
+        count(no_of_adults, booking_status) %>%
+        group_by(no_of_adults) %>%
+        mutate(pct = prop.table(n) * 100),
+    aes(x=as.factor(no_of_adults),fill=as.factor(booking_status))) + 
+    geom_col(aes(y=n)) +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
+    position = position_stack(vjust = 0.5), size = 7.5)+
+    xlab("Number of Adults") +
+    ylab("Count") +
+    theme(axis.text = element_text(size = 17.5),
+    axis.title = element_text(size = 20,face="bold"))
+x# correlation is very weak, 0.007
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_children)
 # correlation is very weak, 0.004
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_weekend_nights)
@@ -65,35 +77,50 @@ cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_week_nights)
 # cor 0.0585
 ggplot(hotel_bookings %>% 
         count(type_of_meal_plan, booking_status) %>%
+        group_by(type_of_meal_plan) %>%
         mutate(pct = prop.table(n) * 100),
-    aes(x=type_of_meal_plan, fill=as.factor(booking_status))) + 
-    geom_bar(position = "stack") +
-    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = pct),
-    position=position_stack(vjust=0.5))+
+    aes(x=as.factor(type_of_meal_plan), fill=as.factor(booking_status))) + 
+    geom_bar(stat = "identity", aes(y = n)) +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
+    position=position_stack(vjust=0.5),
+    size = 10.5)+
     xlab("Type of Meal Plan") +
     ylab("Count")+
     theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold"))
+    axis.title = element_text(size = 20,face="bold")
+    )
 # there can be a correlation but rather weak
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$required_car_parking_space>0.5))
 # can predict 58.8%
-ggplot(hotel_bookings,aes(x=room_type_reserved,
-                fill=as.factor(booking_status))) + 
-    geom_bar(position = "stack") +
-    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
-    xlab("Type of Room Reserved") +
+ggplot(hotel_bookings %>% 
+        count(room_type_reserved, booking_status) %>%
+        group_by(room_type_reserved) %>%
+        mutate(pct = prop.table(n) * 100),
+    aes(x=as.factor(room_type_reserved), fill=as.factor(booking_status))) + 
+    geom_bar(stat = "identity", aes(y = n)) +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
+    position=position_stack(vjust=0.5),
+    size = 8.5)+
+    xlab("Room Type Reserved") +
     ylab("Count")+
     theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold"))
+    axis.title = element_text(size = 20,face="bold")
+    )
 # cannot tell correlation
-ggplot(hotel_bookings,aes(x=arrival_month,
-                fill=as.factor(booking_status))) + 
-    geom_bar(position = "stack") +
-    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
-    xlab("Type of Room Reserved") +
-    ylab("Count") +
+ggplot(hotel_bookings %>% 
+        count(arrival_month, booking_status) %>%
+        group_by(arrival_month) %>%
+        mutate(pct = prop.table(n) * 100),
+    aes(x=as.factor(arrival_month), fill=as.factor(booking_status))) + 
+    geom_bar(stat = "identity", aes(y = n)) +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
+    position=position_stack(vjust=0.5),
+    size = 10.5)+
+    xlab("Month") +
+    ylab("Count")+
     theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold")) 
+    axis.title = element_text(size = 20,face="bold")
+    )
 # could be a strong predictor
 ggplot(hotel_bookings,aes(x=market_segment_type,
                 fill=as.factor(booking_status))) + 
@@ -133,8 +160,18 @@ cor.test(hotel_bookings$booking_status,hotel_bookings$lead_time)
 #avg_price_per_room
 #no_of_special_requests
 
+##===================Check Collinearity===================
+cor_matrix<-rcorr(as.matrix(hotel_bookings[,c("no_of_weekend_nights","no_of_week_nights","lead_time","avg_price_per_room","type_of_meal_plan","arrival_month","market_segment_type","repeated_guest","no_of_special_requests")]))
+cor_matrix
+#A high correlation between: market segment & special reuests, market segment & repeated guest, market segment & no of special request, repeated guest & average price per room, repeated guest & lead time. 
+#potential options: 
+#1) remove repeated guest - since there is potentially a market segment calle drepeated guest/business travellers
+hotel_bookings$mkt_repeat_guest<-0.1*hotel_bookings$repeated_guest+hotel_bookings$market_segment_type
+cor_matrix<-rcorr(as.matrix(hotel_bookings[,c("no_of_weekend_nights","no_of_week_nights","lead_time","avg_price_per_room","type_of_meal_plan","arrival_month","mkt_repeat_guest","no_of_special_requests")]))
+cor_matrix
+
 ##===================Logistic Regression===================
-glm_model.all<-glm(booking_status~.-id, data=hotel_bookings, family=binomial)
+glm_model.all<-glm(booking_status~.-id-repeated_guest-market_segment_type, data=hotel_bookings, family=binomial)
 stargazer(glm_model.all,type="text",no.space=TRUE)
 glm_model.backward<-step(glm_model.all, direction="backward", trace=0)
 stargazer(glm_model.backward,type="text",no.space=TRUE)
@@ -152,13 +189,21 @@ hotel_bookings$glm_pred<-predict(glm_model.backward,hotel_bookings, type="respon
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_pred>0.5))
 #The backward model can predict 76.7% of response correctly
 
-glm_model_selection<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+market_segment_type+repeated_guest+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
+glm_model_selection<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+mkt_repeat_guest+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
 stargazer(glm_model_selection,type="text",no.space=TRUE)
 nagelkerke(glm_model_selection)
+
+glm_model_elim_rep<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
+nagelkerke(glm_model_elim_rep)
+
 # evaluate the accuracy of the selection model
 hotel_bookings$glm_sele_pred<-predict(glm_model_selection,hotel_bookings, type="response")
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_sele_pred>0.5))
-# The selection model can predict 76.0% of response correctly
+# The variable combination model can predict 75.7% of response correctly
+
+hotel_bookings$glm_elim_pred<-predict(glm_model_elim_rep,hotel_bookings, type="response")
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_pred>0.5))
+#removal of repeated guest variable predicts 74.3% of response correctly
 
 #some potential write up:
 #even though the backward model has a higher R^2 and higher accuracy, the selection model can be better explained in a business context.
@@ -170,8 +215,8 @@ train_index <- sample(1:nrow(hotel_bookings), 0.8*nrow(hotel_bookings))
 train <- hotel_bookings[train_index,]
 val <- hotel_bookings[-train_index,]
 #build decision tree
-tree_model_big <- rpart(booking_status ~ ., data = train, method = "class",control = rpart.control(cp = 0))
-tree_model<-tree(booking_status ~ ., data = train, method = "class")
+tree_model_big <- rpart(booking_status ~ .-id, data = train, method = "class",control = rpart.control(cp = 0))
+tree_model<-tree(booking_status ~ .-id, data = train, method = "class")
 plotcp(tree_model_big,upper = c("size"))
 #the best tree has ~156 leaves
 tree_156<-prune(tree_model_big,cp=0.00033)
@@ -179,12 +224,17 @@ tree_156<-prune(tree_model_big,cp=0.00033)
 nodes <- as.numeric(rownames(tree_156$frame))
 max(rpart:::tree.depth(nodes))
 sum(tree_156$frame$var == "<leaf>")
+#plot the tree
+png("tree_156.png", width = 2500, height = 2500, units = "px", res = 300)
+plot(tree_156, uniform = TRUE)
+text(tree_156, cex = 0.25)
+dev.off()
 #predict
 tree_156$y<-val$booking_status
 tree_156$yhat <- predict(tree_156, val, type = "class")
 #accuracy
 mean(tree_156$y == tree_156$yhat)
-#The pruned decision tree has an accuracy of 81.8%
+#The pruned decision tree has an accuracy of 81.5%
 #test of overfitting
 tree_156$y_train<-predict(tree_156, train, type = "class")
 mean(tree_156$y_train == train$booking_status)
@@ -195,14 +245,13 @@ tree_156$predict<- predict(tree_156, test, type = "class")
 ## ======================== Random Forest ========================
 #build random forest
 
-rf_model <- randomForest(booking_status ~ ., data = train, importance = TRUE, ntree = 100,maxdepth = 5)
+rf_model <- randomForest(booking_status ~ .-id, data = train, importance = TRUE, ntree = 100,maxdepth = 5)
 rf_model.train_predit = predict(rf_model,train)
 rf_model.predict = predict(rf_model,val)
-
 prop.table(table(rf_model.train_predit>0.5,train$booking_status))
-#train accuracy is 98.254%
+#train accuracy is 95.21%
 prop.table(table(rf_model.predict>0.5,val$booking_status))
-#test accuracy is 82.447%
+#test accuracy is 82.04%
 #random forest is overfitting no matter the tree depth or number of trees
 #this may not be the best model for this data set
 
@@ -247,3 +296,6 @@ results <- model %>% evaluate(data_val, val_labels)
 plot(history)
 history$metrics
 results
+
+
+## ======================== Scratch ========================
