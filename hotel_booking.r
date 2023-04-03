@@ -242,6 +242,9 @@ mean(tree_156$y_train == train$booking_status)
 #predictions
 tree_156$predict<- predict(tree_156, test, type = "class")
 
+#comment on the tree: the tree is mainly using these variables to make a judgement:
+#lead_time, market_segment_type, Avg_price_per_room, number_of special_requests, arrival_month to make predictions. 
+
 ## ======================== Random Forest ========================
 #build random forest
 
