@@ -1,23 +1,20 @@
-#install libraries
+## ===== install libraries =====
 library(tidyverse)
 library(ggpubr)
 library(dplyr)
 library(stargazer)
-library(nnet)
 #install.packages("neuralnet")
 library(neuralnet)
-library(tree)
 library(MASS)
 library(psych)
-library(randomForest)
-library(rpart)
 library(viridis)
 library(readxl)
 library(Hmisc)
 library(mfx)
 library(rcompanion)
 
-#load data
+## ======================== Load Data ========================
+=======
 hotel_bookings <- read.csv("./train.csv")
 test <- read.csv("./test.csv")
 hotel_booking<-drop_na(hotel_bookings)
@@ -25,8 +22,8 @@ head(hotel_bookings)
 str(hotel_bookings)
 head(test)
 
-## ======================== Need to figure out which variables are worth using for the model ========================
-#Variables
+## ======================== Variable Exploration ========================
+=======
 #id (not useful)
 #no_of_adults - this may have too much noise
 #no_of_children - this may infer type of stay and may impact the outcome
@@ -46,8 +43,6 @@ head(test)
 #avg_price_per_room, - may be useful
 #no_of_special_requests - may have too much noise
 
-## ======================== Logistic Regression ========================
-# simple data exploration
 str(hotel_bookings)
 
 #check for missing values
@@ -209,6 +204,8 @@ prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_pred>0.5
 #even though the backward model has a higher R^2 and higher accuracy, the selection model can be better explained in a business context.
 
 ## ======================== Decision Tree ========================
+library(tree)
+library(rpart)
 #split data into train and test
 set.seed(123)
 train_index <- sample(1:nrow(hotel_bookings), 0.8*nrow(hotel_bookings))
@@ -246,8 +243,8 @@ tree_156$predict<- predict(tree_156, test, type = "class")
 #lead_time, market_segment_type, Avg_price_per_room, number_of special_requests, arrival_month to make predictions. 
 
 ## ======================== Random Forest ========================
+library(randomForest)
 #build random forest
-
 rf_model <- randomForest(booking_status ~ .-id, data = train, importance = TRUE, ntree = 100,maxdepth = 5)
 rf_model.train_predit = predict(rf_model,train)
 rf_model.predict = predict(rf_model,val)
@@ -258,7 +255,9 @@ prop.table(table(rf_model.predict>0.5,val$booking_status))
 #random forest is overfitting no matter the tree depth or number of trees
 #this may not be the best model for this data set
 
+
 ##===================Neural Network(nnet)===================
+library(nnet)
 #set seed
 set.seed(123)
 n <- names(train[,-1])

@@ -1,0 +1,46 @@
+1. Do you get the data? If you have multiple options in the proposal, please decide which
+option to go.
+Loraine's answer: We have decided on the data. 
+2. Please briefly describe the background (e.g., the information/business model about the
+company/organization) of the data (this part may be the first chapter of the final report)
+Loraine's answer: the cancellation at the hotel is at xxx, higher than the industry average, which as led to a loss of revenue. 
+The hotel is trying to figure out which types of customers are likely to cancel at the last minute, and to develop a strategy to reduce the cancellations.
+3. Please describe the questions you want to answer with the data. Please check the
+comments to the proposal. Think about a list of hypotheses on customer behavior that
+you can take to the data.
+Loraine's answer
+The questions we want to answer are:
+a) which variables plays more important role in determining the cancellation of the hotel?
+    a-1): do they positively or negatively affect the cancellation? Is there a pattern (non-linear) in the relationship?
+b) what are the correlations among all these variables and how to mitigate the multicollinearity problem
+    b-1): there's significant correlation between repeated guest and market segment.
+    b-2): I addressed it by creating a new variable called "repeated_guest_market_segment" (math: 0.1*repeated_guest+market_segment) and then dropped the original two variables.
+c) what is the best model to help predict the cancellation of the hotel?
+    c-1): we have tried four models: logistic regression, decision tree, random forest, and neural network. 
+    c-2): we used forward, backward, and manual selection methods to construct the models. (result)
+    c-3): we used rpart to determine the optimum depth and number of leaves to create the tree. See github for the image. 
+        The main determinstic variables are: 
+    c-4): the random forest method is having a significant overfitting problem. The potential reason is that we only need 5 strong variables to predict cancellation, and the small training set size is not enough to create a robust model.
+    c-5): the one layer neural network is giving results with accuracy ~60.4%. This is merely better than guessing. The reason for such poor accuracy is that each of the variables can only partially explain customer cancellation, and only multiple layers of neurons can handle the complexity of the problem.
+    c-6): a two layer neural network model using the tensorflow package gives high accuracy and does not overfit testing data. However we are not able to interpret the model. (Do we want to explain the decision tree result instead?)
+d) how do we interpret the best model?
+    See c-6)
+4. Please report some summary statistics and figures/graphs that are useful to answer the
+questions. Useful information would include, for example,
+• Summary statistics/figures of the outcome variable (response/sales etc.)
+• Summary statistics/figures of the key explanatory variables (demographics,
+marketing variables etc.)
+• Correlation matrix/scatter plots of the outcome variable and the explanatory
+variables.
+Loraine: To get the summary statistics and figures, run the hotel_booking.r file, run sections:
+    Install libraries
+    Load data
+    Variable exploration
+5. Please report statistical models you are thinking to apply to the data. Also, please report
+the specification of the model (e.g., 𝑦 = 𝛽0 + 𝛽1𝑥1 + 𝛽2 log(𝑥2) + 𝛽3𝑥1𝑥2 + 𝜀) that you
+are considering. Explain why you want to use the statistical models and the specification
+(e.g., why do you want to interact two variables).
+Loraine: I will work on this part of the report
+6. If you have already tried to estimate the models, please report the results. Any
+preliminary results are fine
+Loraine: see 3
