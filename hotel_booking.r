@@ -14,7 +14,6 @@ library(mfx)
 library(rcompanion)
 
 ## ======================== Load Data ========================
-=======
 hotel_bookings <- read.csv("./train.csv")
 test <- read.csv("./test.csv")
 hotel_booking<-drop_na(hotel_bookings)
@@ -23,7 +22,6 @@ str(hotel_bookings)
 head(test)
 
 ## ======================== Variable Exploration ========================
-=======
 #id (not useful)
 #no_of_adults - this may have too much noise
 #no_of_children - this may infer type of stay and may impact the outcome
@@ -51,6 +49,7 @@ colSums(is.na(hotel_bookings))
 #find correlation of single variables with booking status
 #Uncertain variables
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_adults)
+png("no_of_adults_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(no_of_adults, booking_status) %>%
         group_by(no_of_adults) %>%
@@ -58,18 +57,27 @@ ggplot(hotel_bookings %>%
     aes(x=as.factor(no_of_adults),fill=as.factor(booking_status))) + 
     geom_col(aes(y=n)) +
     geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
-    position = position_stack(vjust = 0.5), size = 7.5)+
+    position = position_stack(vjust=0.5), check_overlap = TRUE,size=3)+
+    ggtitle("Cancellation distribution by number of adults") +
     xlab("Number of Adults") +
     ylab("Count") +
-    theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold"))
-x# correlation is very weak, 0.007
+    guides(fill=guide_legend(title="Booking Status"))+
+    theme(
+    title = element_text(size = 8),
+    axis.title = element_text(size = 8,face="bold"),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6)
+    )
+dev.off()
+# correlation is very weak, 0.007
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_children)
 # correlation is very weak, 0.004
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_weekend_nights)
 # cor 0.0443
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_week_nights)
 # cor 0.0585
+png("no_of_week_nights_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(type_of_meal_plan, booking_status) %>%
         group_by(type_of_meal_plan) %>%
@@ -77,16 +85,23 @@ ggplot(hotel_bookings %>%
     aes(x=as.factor(type_of_meal_plan), fill=as.factor(booking_status))) + 
     geom_bar(stat = "identity", aes(y = n)) +
     geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
-    position=position_stack(vjust=0.5),
-    size = 10.5)+
+    position = position_stack(vjust=0.5), check_overlap = TRUE,size=3)+
+    ggtitle("Cancellation distribution by type of meal plan") +
     xlab("Type of Meal Plan") +
     ylab("Count")+
-    theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold")
+    guides(fill=guide_legend(title="Booking Status"))+
+    theme(
+    title = element_text(size = 8),
+    axis.title = element_text(size = 8,face="bold"),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6)
     )
+dev.off()
 # there can be a correlation but rather weak
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$required_car_parking_space>0.5))
 # can predict 58.8%
+png("required_car_parking_space_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(room_type_reserved, booking_status) %>%
         group_by(room_type_reserved) %>%
@@ -96,12 +111,14 @@ ggplot(hotel_bookings %>%
     geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
     position=position_stack(vjust=0.5),
     size = 8.5)+
+    ggtitle("Cancellation distribution by room type reserved") +
     xlab("Room Type Reserved") +
     ylab("Count")+
     theme(axis.text = element_text(size = 17.5),
     axis.title = element_text(size = 20,face="bold")
     )
 # cannot tell correlation
+png("arrival_month_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(arrival_month, booking_status) %>%
         group_by(arrival_month) %>%
@@ -110,21 +127,44 @@ ggplot(hotel_bookings %>%
     geom_bar(stat = "identity", aes(y = n)) +
     geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
     position=position_stack(vjust=0.5),
-    size = 10.5)+
+    size = 1.5)+
+    ggtitle("Cancellation distribution by arrival month") +
     xlab("Month") +
     ylab("Count")+
-    theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold")
+    guides(fill=guide_legend(title="Booking Status"))+
+    theme(
+    title = element_text(size = 8),
+    axis.title = element_text(size = 8,face="bold"),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6)
     )
+dev.off()
 # could be a strong predictor
-ggplot(hotel_bookings,aes(x=market_segment_type,
+png("market_segment_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
+ggplot(hotel_bookings %>% 
+        count(market_segment_type, booking_status) %>%
+        group_by(market_segment_type) %>%
+        mutate(pct = prop.table(n) * 100),
+    aes(x=market_segment_type,
                 fill=as.factor(booking_status))) + 
-    geom_bar(position = "stack") +
-    geom_text(stat="count",aes(label = ..count..), position = position_stack(0.5), size = 7.5)+
+    geom_bar(stat = "identity", aes(y = n)) +
+    geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
+    position=position_stack(vjust=0.5),
+    check_overlap = TRUE,
+    size = 2.5)+
+    ggtitle("Cancellation distribution by market segment") +
     xlab("Type of Room Reserved") +
     ylab("Count") +
-    theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold")) 
+    guides(fill=guide_legend(title="Booking Status"))+
+    theme(
+    title = element_text(size = 8),
+    axis.title = element_text(size = 8,face="bold"),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6)
+    )
+dev.off()
 #could be a strong predictor
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$repeated_guest>0.5))
 # can predict 61.3%
