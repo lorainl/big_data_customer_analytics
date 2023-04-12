@@ -77,7 +77,7 @@ cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_weekend_nights)
 # cor 0.0443
 cor.test(hotel_bookings$booking_status,hotel_bookings$no_of_week_nights)
 # cor 0.0585
-png("no_of_week_nights_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
+png("type_of_meal_plan_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(type_of_meal_plan, booking_status) %>%
         group_by(type_of_meal_plan) %>%
@@ -101,7 +101,7 @@ dev.off()
 # there can be a correlation but rather weak
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$required_car_parking_space>0.5))
 # can predict 58.8%
-png("required_car_parking_space_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
+png("room_type_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
         count(room_type_reserved, booking_status) %>%
         group_by(room_type_reserved) %>%
@@ -110,13 +110,19 @@ ggplot(hotel_bookings %>%
     geom_bar(stat = "identity", aes(y = n)) +
     geom_text(aes(label=paste0(sprintf("%1.1f", pct),"%"),y = n),
     position=position_stack(vjust=0.5),
-    size = 8.5)+
+    size = 2.5)+
     ggtitle("Cancellation distribution by room type reserved") +
     xlab("Room Type Reserved") +
     ylab("Count")+
-    theme(axis.text = element_text(size = 17.5),
-    axis.title = element_text(size = 20,face="bold")
+    guides(fill=guide_legend(title="Booking Status"))+
+    theme(
+    title = element_text(size = 8),
+    axis.title = element_text(size = 8,face="bold"),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6)
     )
+dev.off()
 # cannot tell correlation
 png("arrival_month_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
@@ -216,7 +222,7 @@ stargazer(glm_model.forward,type="text",no.space=TRUE)
 nagelkerke(glm_model.all)
 nagelkerke(glm_model.backward)#this one gives the highest R^2, but is not great
 nagelkerke(glm_model.forward)
-#calculate mfx
+#calculate mfx （for categorial value marginal effect）
 backward_mfx<-logitmfx(booking_status~. -no_of_previous_bookings_not_canceled, data = hotel_bookings)
 backward_mfx
 #evaluate the accuracy of the backwawrd model
@@ -231,14 +237,17 @@ nagelkerke(glm_model_selection)
 glm_model_elim_rep<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
 nagelkerke(glm_model_elim_rep)
 
+glm_model_elim_rep_2<-glm(booking_status~type_of_meal_plan+lead_time+arrival_month+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
+nagelkerke(glm_model_elim_rep_2)
+
 # evaluate the accuracy of the selection model
 hotel_bookings$glm_sele_pred<-predict(glm_model_selection,hotel_bookings, type="response")
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_sele_pred>0.5))
 # The variable combination model can predict 75.7% of response correctly
 
-hotel_bookings$glm_elim_pred<-predict(glm_model_elim_rep,hotel_bookings, type="response")
-prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_pred>0.5))
-#removal of repeated guest variable predicts 74.3% of response correctly
+hotel_bookings$glm_elim_2_pred<-predict(glm_model_elim_rep_2,hotel_bookings, type="response")
+prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_2_pred>0.5))
+#accuracy 74.3%
 
 #some potential write up:
 #even though the backward model has a higher R^2 and higher accuracy, the selection model can be better explained in a business context.
