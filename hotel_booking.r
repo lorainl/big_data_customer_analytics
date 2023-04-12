@@ -123,6 +123,8 @@ ggplot(hotel_bookings %>%
     legend.text = element_text(size = 6)
     )
 dev.off()
+cor.test(hotel_bookings$booking_status,hotel_bookings$room_type_reserved)
+#correlation -0.023
 # cannot tell correlation
 png("arrival_month_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
 ggplot(hotel_bookings %>% 
@@ -330,6 +332,7 @@ data_val<-as.matrix(data_val)
 val_labels<-val$booking_status
 head(labels)
 model <- keras_model_sequential() %>%
+    layer_flatten() %>%
     layer_dense(units = 5, activation = "relu",input_shape = c(18)) %>%
     layer_dense(units = 5, activation = "relu") %>%
     layer_dense(units = 1, activation = "sigmoid")
