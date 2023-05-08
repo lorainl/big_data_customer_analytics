@@ -156,7 +156,7 @@ ggplot(hotel_bookings %>%
     legend.text = element_text(size = 6)
     )
 dev.off()
-hotel_bookings$winter<-ifelse((hotel_bookings$arrival_month==12 || hotel_bookings$arrival_month==1 || hotel_bookings$arrival_month==2),1,0)
+hotel_bookings$winter<-ifelse((hotel_bookings$arrival_month==12 | hotel_bookings$arrival_month==1 | hotel_bookings$arrival_month==2),1,0)
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$winter>0.5))
 # could be a strong predictor
 png("market_segment_VS_cancellation.png", width = 1200, height = 1200, units = "px", res = 300)
@@ -215,13 +215,13 @@ cor.test(hotel_bookings$booking_status,hotel_bookings$lead_time)
 
 ##===================Check Collinearity===================
 cor_matrix<-rcorr(as.matrix(hotel_bookings[,c("lead_time","avg_price_per_room","meal_plan_yn","winter","market_segment_type","repeated_guest","no_of_special_requests")]))
-cor_matrix
+write.csv(cor_matrix, file = "cor_matrix.csv")
 #A high correlation between: market segment & special reuests, market segment & repeated guest, market segment & no of special request, repeated guest & average price per room, repeated guest & lead time. 
 #potential options: 
 #1) remove repeated guest - since there is potentially a market segment calle drepeated guest/business travellers
 hotel_bookings$mkt_repeat_guest<-0.1*hotel_bookings$repeated_guest+hotel_bookings$market_segment_type
-cor_matrix<-rcorr(as.matrix(hotel_bookings[,c("no_of_weekend_nights","no_of_week_nights","lead_time","avg_price_per_room","type_of_meal_plan","arrival_month","mkt_repeat_guest","no_of_special_requests")]))
-cor_matrix
+cor_matrix_upd<-rcorr(as.matrix(hotel_bookings[,c("no_of_weekend_nights","no_of_week_nights","lead_time","avg_price_per_room","type_of_meal_plan","arrival_month","mkt_repeat_guest","no_of_special_requests")]))
+cor_matrix_upd
 
 ##===================Logistic Regression===================
 glm_model.all<-glm(booking_status~.-id-repeated_guest-market_segment_type, data=hotel_bookings, family=binomial)
@@ -249,29 +249,20 @@ glm_model_selection<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+t
 stargazer(glm_model_selection,type="text",no.space=TRUE)
 nagelkerke(glm_model_selection)
 
-glm_model_elim_rep<-glm(booking_status~no_of_weekend_nights+no_of_week_nights+type_of_meal_plan+lead_time+arrival_month+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
-nagelkerke(glm_model_elim_rep)
-
-glm_model_elim_rep_2<-glm(booking_status~type_of_meal_plan+lead_time+arrival_month+avg_price_per_room+no_of_special_requests, data=hotel_bookings, family=binomial)
-nagelkerke(glm_model_elim_rep_2)
-stargazer(glm_model_elim_rep_2,type="text",no.space=TRUE)
-
 glm_model_elim_rep_3<-glm(booking_status~meal_plan_yn+lead_time+winter+avg_price_per_room+no_of_special_requests+mkt_repeat_guest, data=hotel_bookings, family=binomial)
 nagelkerke(glm_model_elim_rep_3)
 stargazer(glm_model_elim_rep_3,type="text",no.space=TRUE)
 
-# evaluate the accuracy of the selection model
-hotel_bookings$glm_sele_pred<-predict(glm_model_selection,hotel_bookings, type="response")
-prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_sele_pred>0.5))
-# The variable combination model can predict 75.7% of response correctly
-
-hotel_bookings$glm_elim_2_pred<-predict(glm_model_elim_rep_2,hotel_bookings, type="response")
-prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_2_pred>0.5))
-#accuracy 74.3%
-
 hotel_bookings$glm_elim_3_pred<-predict(glm_model_elim_rep_3,hotel_bookings, type="response")
 prop.table(table(hotel_bookings$booking_status, hotel_bookings$glm_elim_3_pred>0.5))
+head(hotel_bookings)
 #accuracy 75.8%
+glm_mean<-logitmfx(booking_status ~ meal_plan_yn+lead_time+avg_price_per_room+no_of_special_requests+mkt_repeat_guest+winter,data = hotel_bookings)
+glm_mean
+#get the standard deviation of variables
+sd(hotel_bookings$lead_time)
+sd(hotel_bookings$avg_price_per_room)
+sd(hotel_bookings$no_of_special_requests)
 #some potential write up:
 #even though the backward model has a higher R^2 and higher accuracy, the selection model can be better explained in a business context.
 
